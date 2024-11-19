@@ -1,0 +1,30 @@
+name: Build & Test
+
+on:
+    pull_request:
+        paths-ignore:
+            - 'README.md'
+    workflow_dispatch:
+
+jobs:
+    build:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+
+            - uses: actions/setup-go@v5
+              with:
+                  go-version-file: 'go.mod'
+
+            - name: golangci-lint
+              uses: golangci/golangci-lint-action@v6
+              with:
+               version: v1.60
+
+            - name: Build
+              run: |
+                  go build -ldflags='-s -w'
+
+            # - name: Run Tests
+            #   run: |
+            #       ./unit-test.sh
