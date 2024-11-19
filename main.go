@@ -132,7 +132,10 @@ func main() {
 				println(fmt.Sprintf("Error: %v", err))
 			}
 
-			os.WriteFile(path.Join(outputDirectory, strings.ToLower(outputFilename)), jsonData, os.ModePerm)
+			err = os.WriteFile(path.Join(outputDirectory, strings.ToLower(outputFilename)), jsonData, os.ModePerm)
+			if err != nil {
+				println(fmt.Sprintf("Failed writing component hashes: %v", err))
+			}
 		}
 	}
 }
