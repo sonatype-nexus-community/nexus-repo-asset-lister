@@ -6,7 +6,7 @@ on:
             - 'v*'
 
 env:
-    LC_APPLICATION_ID: the-cla
+    LC_APPLICATION_ID: nexus-repo-asset-lister
 
 jobs:
     goreleaser:
