@@ -46,3 +46,6 @@ vendor/
 
 # Go workspace file
 go.work
+
+# Any generated json files
+*.json
