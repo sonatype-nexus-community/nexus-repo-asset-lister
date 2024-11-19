@@ -67,7 +67,7 @@ Last but not least of all - have fun!
 
 <!-- Links Section -->
 [shield_gh-workflow-test]: https://img.shields.io/github/actions/workflow/status/sonatype-nexus-community/nexus-repo-asset-lister/build.yml?branch=main&logo=GitHub&logoColor=white "build"
-[shield_license]: https://img.shields.io/github/license/sonatype-nexus-community/cnexus-repo-asset-lister?logo=open%20source%20initiative&logoColor=white "license"
+[shield_license]: https://img.shields.io/github/license/sonatype-nexus-community/nexus-repo-asset-lister?logo=open%20source%20initiative&logoColor=white "license"
 
 [link_gh-workflow-test]: https://github.com/sonatype-nexus-community/nexus-repo-asset-lister/actions/workflows/build.yml?query=branch%3Amain
 [license_file]: https://github.com/sonatype-nexus-community/nexus-repo-asset-lister/blob/main/LICENSE
