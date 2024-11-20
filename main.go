@@ -34,8 +34,7 @@ import (
 const (
 	ENV_NXRM_USERNAME = "NXRM_USERNAME"
 	ENV_NXRM_PASSWORD = "NXRM_PASSWORD"
-
-	REPO_TYPE_PROXY = "proxy"
+	REPO_TYPE_PROXY   = "proxy"
 )
 
 var (
@@ -43,6 +42,7 @@ var (
 	currentRuntime  string = runtime.GOOS
 	commit                 = "unknown"
 	outputDirectory string
+	outputSkipped   bool
 	nxrmUrl         string
 	nxrmUsername    string
 	nxrmPassword    string
@@ -65,6 +65,7 @@ func init() {
 	flag.StringVar(&nxrmUsername, "username", "", fmt.Sprintf("Username used to authenticate to Sonatype Nexus Repository (can also be set using the environment variable %s)", ENV_NXRM_USERNAME))
 	flag.StringVar(&nxrmPassword, "password", "", fmt.Sprintf("Password used to authenticate to Sonatype Nexus Repository (can also be set using the environment variable %s)", ENV_NXRM_PASSWORD))
 	flag.StringVar(&outputDirectory, "o", cwd, "Directory to write asset lists to")
+	flag.BoolVar(&outputSkipped, "skipped", false, "Whether to ouptut skipped assets to a separate '-skipped.json' file")
 	flag.BoolVar(&debugLogging, "X", false, "Enable debug logging")
 }
 
@@ -118,13 +119,13 @@ func main() {
 
 	for i, r := range *allRepositories {
 		if r.Type != nil && *r.Type == REPO_TYPE_PROXY {
-			println(fmt.Sprintf("%00d: PROXY of type %s named %s", i, *r.Type, *r.Name))
-			componentHashes, err := getAssetsInRepository(nxrmServer, &r)
+			println(fmt.Sprintf("%00d: PROXY of format %s named %s", i, *r.Format, *r.Name))
+			componentHashes, skippedAssets, err := getAssetsInRepository(nxrmServer, &r)
 			if err != nil {
 				println(fmt.Sprintf("Error: %v", err))
 			}
 
-			println(fmt.Sprintf("  		  %d Compnent Hashes", len(*componentHashes)))
+			println(fmt.Sprintf("   : %0000d Compnent Hashes, %0000d Skipped Assets", len(*componentHashes), len(*skippedAssets)))
 
 			outputFilename := fmt.Sprintf("%s-%s-%s.json", *r.Type, *r.Format, *r.Name)
 			jsonData, err := json.Marshal(componentHashes)
@@ -135,6 +136,19 @@ func main() {
 			err = os.WriteFile(path.Join(outputDirectory, strings.ToLower(outputFilename)), jsonData, os.ModePerm)
 			if err != nil {
 				println(fmt.Sprintf("Failed writing component hashes: %v", err))
+			}
+
+			if outputSkipped && len(*skippedAssets) > 0 {
+				outputSkippedFilename := fmt.Sprintf("%s-%s-%s-skipped.json", *r.Type, *r.Format, *r.Name)
+				jsonSkippedData, err := json.Marshal(skippedAssets)
+				if err != nil {
+					println(fmt.Sprintf("Error: %v", err))
+				}
+
+				err = os.WriteFile(path.Join(outputDirectory, strings.ToLower(outputSkippedFilename)), jsonSkippedData, os.ModePerm)
+				if err != nil {
+					println(fmt.Sprintf("Failed writing skipped components: %v", err))
+				}
 			}
 		}
 	}
@@ -197,12 +211,13 @@ func getAllProxyRepositories(server *NxrmServer) (*[]ApiRepository, error) {
 	return &repositories, nil
 }
 
-func getAssetsInRepository(server *NxrmServer, repository *ApiRepository) (*[]ComponentHash, error) {
+func getAssetsInRepository(server *NxrmServer, repository *ApiRepository) (*[]ComponentHash, *[]ApiComponentAsset, error) {
 	allAssetHashes := make([]ComponentHash, 0)
+	skippedAssets := make([]ApiComponentAsset, 0)
 
 	firstComponentPage, err := getAssetsPageForRepository(server, *repository.Name, nil)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	for _, c := range firstComponentPage.Items {
@@ -217,20 +232,30 @@ func getAssetsInRepository(server *NxrmServer, repository *ApiRepository) (*[]Co
 	for lastContinuationToken != nil {
 		componentPage, err := getAssetsPageForRepository(server, *repository.Name, lastContinuationToken)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 
 		for _, c := range firstComponentPage.Items {
 			for _, a := range c.Assets {
-				allAssetHashes = append(allAssetHashes, ComponentHash(*a.Checksums.Sha1))
+				if a.Checksums != nil {
+					if a.Checksums.Sha1 != nil {
+						allAssetHashes = append(allAssetHashes, ComponentHash(*a.Checksums.Sha1))
+					} else {
+						log.Debug(fmt.Sprintf("Skipping Asset (no hash): %s", a.DownloadUrl))
+						skippedAssets = append(skippedAssets, a)
+					}
+				} else {
+					log.Debug(fmt.Sprintf("Skipping Asset (no checksums): %s", a.DownloadUrl))
+					skippedAssets = append(skippedAssets, a)
+				}
 			}
 		}
-		log.Debug("Component Hashes after page:", len(allAssetHashes), lastContinuationToken)
+		log.Debug(fmt.Sprintf("Component Hashes after page: %d - cont token: %s ", len(allAssetHashes), *lastContinuationToken))
 
 		lastContinuationToken = componentPage.ContinuationToken
 	}
 
-	return &allAssetHashes, nil
+	return &allAssetHashes, &skippedAssets, nil
 }
 
 func getAssetsPageForRepository(server *NxrmServer, repository_name string, continuation_token *string) (*ApiComponentList, error) {

@@ -59,10 +59,11 @@ type ApiComponentAssetChecksums struct {
 }
 
 type ApiComponentAsset struct {
-	Id         string                      `json:"Id"`
-	Repository string                      `json:"repository"`
-	Format     string                      `json:"format"`
-	Checksums  *ApiComponentAssetChecksums `json:"checksum"`
+	Id          string                      `json:"Id"`
+	Repository  string                      `json:"repository"`
+	Format      string                      `json:"format"`
+	Checksums   *ApiComponentAssetChecksums `json:"checksum"`
+	DownloadUrl string                      `json:"downloadUrl"`
 }
 
 type ApiComponent struct {
