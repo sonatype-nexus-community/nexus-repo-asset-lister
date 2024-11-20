@@ -225,7 +225,7 @@ func getAssetsInRepository(server *NxrmServer, repository *ApiRepository) (*[]Co
 				allAssetHashes = append(allAssetHashes, ComponentHash(*a.Checksums.Sha1))
 			}
 		}
-		log.Debug("Component Hashes after page:", len(allAssetHashes), lastContinuationToken)
+		log.Debug(fmt.Sprintf("Component Hashes after page: %d - cont token: %s ", len(allAssetHashes), *lastContinuationToken))
 
 		lastContinuationToken = componentPage.ContinuationToken
 	}
