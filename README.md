@@ -28,9 +28,11 @@ You can see all options by running:
 usage: nexus-repo-asset-lister [OPTIONS]
   -X    Enable debug logging
   -o string
-        Directory to write asset lists to (default "/Current/Working/Directory")
+        Directory to write asset lists to (default "/Users/phorton/Documents/GitHub/sonatype-nexus-community/nexus-repo-asset-lister")
   -password string
         Password used to authenticate to Sonatype Nexus Repository (can also be set using the environment variable NXRM_PASSWORD)
+  -skipped
+        Whether to ouptut skipped assets to a separate '-skipped.json' file
   -url string
         URL including protocol to your Sonatype Nexus Repository Manager (default "http://localhost:8081")
   -username string

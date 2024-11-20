@@ -42,6 +42,7 @@ var (
 	currentRuntime  string = runtime.GOOS
 	commit                 = "unknown"
 	outputDirectory string
+	outputSkipped   bool
 	nxrmUrl         string
 	nxrmUsername    string
 	nxrmPassword    string
@@ -64,6 +65,7 @@ func init() {
 	flag.StringVar(&nxrmUsername, "username", "", fmt.Sprintf("Username used to authenticate to Sonatype Nexus Repository (can also be set using the environment variable %s)", ENV_NXRM_USERNAME))
 	flag.StringVar(&nxrmPassword, "password", "", fmt.Sprintf("Password used to authenticate to Sonatype Nexus Repository (can also be set using the environment variable %s)", ENV_NXRM_PASSWORD))
 	flag.StringVar(&outputDirectory, "o", cwd, "Directory to write asset lists to")
+	flag.BoolVar(&outputSkipped, "skipped", false, "Whether to ouptut skipped assets to a separate '-skipped.json' file")
 	flag.BoolVar(&debugLogging, "X", false, "Enable debug logging")
 }
 
@@ -136,7 +138,7 @@ func main() {
 				println(fmt.Sprintf("Failed writing component hashes: %v", err))
 			}
 
-			if len(*skippedAssets) > 0 {
+			if outputSkipped && len(*skippedAssets) > 0 {
 				outputSkippedFilename := fmt.Sprintf("%s-%s-%s-skipped.json", *r.Type, *r.Format, *r.Name)
 				jsonSkippedData, err := json.Marshal(skippedAssets)
 				if err != nil {
