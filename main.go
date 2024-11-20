@@ -222,7 +222,17 @@ func getAssetsInRepository(server *NxrmServer, repository *ApiRepository) (*[]Co
 
 	for _, c := range firstComponentPage.Items {
 		for _, a := range c.Assets {
-			allAssetHashes = append(allAssetHashes, ComponentHash(*a.Checksums.Sha1))
+			if a.Checksums != nil {
+				if a.Checksums.Sha1 != nil {
+					allAssetHashes = append(allAssetHashes, ComponentHash(*a.Checksums.Sha1))
+				} else {
+					log.Debug(fmt.Sprintf("Skipping Asset (no hash): %s", a.DownloadUrl))
+					skippedAssets = append(skippedAssets, a)
+				}
+			} else {
+				log.Debug(fmt.Sprintf("Skipping Asset (no checksums): %s", a.DownloadUrl))
+				skippedAssets = append(skippedAssets, a)
+			}
 		}
 	}
 	log.Debug("Component Hashes after first page:", len(allAssetHashes))
