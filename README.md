@@ -50,23 +50,25 @@ You can see all options by running:
 
 usage: nexus-repo-asset-lister [OPTIONS]
   -X    Enable debug logging
-  -o string
-        Directory to write asset lists to (default "/Users/phorton/Documents/GitHub/sonatype-nexus-community/nexus-repo-asset-lister")
-  -password string
+  -o string (optional)
+        Directory to write asset lists to (default "~/nexus-repo-asset-lister")
+  -password string (mandatory)
         Password used to authenticate to Sonatype Nexus Repository (can also be set using the environment variable NXRM_PASSWORD)
-  -skipped
+  -skipped (optional)
         Whether to ouptut skipped assets to a separate '-skipped.json' file
-  -url string
+  -url string (mandatory)
         URL including protocol to your Sonatype Nexus Repository Manager (default "http://localhost:8081")
-  -username string
+  -username string (mandatory)
         Username used to authenticate to Sonatype Nexus Repository (can also be set using the environment variable NXRM_USERNAME)
+  -repository-name string (optional)
+        Run only for a specific Repository Name
 ```
 
 In order to produce the expected JSON files, you should run `nexus-repo-asset-lister` with Administrator credentials against your Sonatype Nexus Repository.
 
 The URL of the Sonatype Nexus Repository sever is specified with the `-url` argument and should contain the protcol (e.g. `https://`) and any context path you may have set for the installation.
 
-Credentials can be supplied as command line arguments or via Environment Variables.
+Credentials can be supplied as command-line arguments or via Environment Variables.
 
 ```
 NXRM_USERNAME=username NXRM_PASSWORD=password ./nexus-repo-asset-lister -url https://my-nexus-repository.tld
