@@ -290,7 +290,7 @@ func getAssetsInRepository(server *NxrmServer, repository *ApiRepository) (*[]Co
 			return nil, nil, err
 		}
 
-		for _, c := range firstComponentPage.Items {
+		for _, c := range componentPage.Items {
 			for _, a := range c.Assets {
 				allAssetIdentities = append(allAssetIdentities, ComponentIdentity{
 					Path:   a.Path,
