@@ -38,15 +38,16 @@ const (
 )
 
 var (
-	debugLogging    bool   = false
-	currentRuntime  string = runtime.GOOS
-	commit                 = "unknown"
-	outputDirectory string
-	outputSkipped   bool
-	nxrmUrl         string
-	nxrmUsername    string
-	nxrmPassword    string
-	version         = "dev"
+	debugLogging           bool   = false
+	currentRuntime         string = runtime.GOOS
+	commit                        = "unknown"
+	outputDirectory        string
+	outputSkipped          bool
+	nxrmUrl                string
+	nxrmUsername           string
+	nxrmPassword           string
+	specificRepostioryName string
+	version                = "dev"
 )
 
 func usage() {
@@ -67,6 +68,8 @@ func init() {
 	flag.StringVar(&outputDirectory, "o", cwd, "Directory to write asset lists to")
 	flag.BoolVar(&outputSkipped, "skipped", false, "Whether to ouptut skipped assets to a separate '-skipped.json' file")
 	flag.BoolVar(&debugLogging, "X", false, "Enable debug logging")
+
+	flag.StringVar(&specificRepostioryName, "repository-name", "", "Run only for a specific Repository Name")
 }
 
 func main() {
@@ -112,7 +115,24 @@ func main() {
 	println("")
 
 	nxrmServer := NewNxrmServer(nxrmUrl, nxrmUsername, nxrmPassword)
-	allRepositories, err := getAllProxyRepositories(nxrmServer)
+
+	var allRepositories *[]ApiRepository
+	if strings.TrimSpace(specificRepostioryName) != "" {
+		repo, err := getSingleRepositoryByName(nxrmServer, specificRepostioryName)
+		if err != nil {
+			println(fmt.Sprintf("Error: %v", err))
+			os.Exit(1)
+		}
+		repos := []ApiRepository{*repo}
+		allRepositories = &repos
+
+	} else {
+		allRepositories, err = getAllProxyRepositories(nxrmServer)
+		if err != nil {
+			println(fmt.Sprintf("Error: %v", err))
+			os.Exit(1)
+		}
+	}
 	if err != nil {
 		println(fmt.Sprintf("Error: %v", err))
 	}
@@ -214,6 +234,33 @@ func getAllProxyRepositories(server *NxrmServer) (*[]ApiRepository, error) {
 	}
 
 	return &repositories, nil
+}
+
+func getSingleRepositoryByName(server *NxrmServer, repository_name string) (*ApiRepository, error) {
+	request, err := http.NewRequest(http.MethodGet, server.GetApiUrl(fmt.Sprintf("/v1/repositories/%s", repository_name)), nil)
+	if err != nil {
+		return nil, err
+	}
+	request.SetBasicAuth(server.username, server.password)
+
+	localVarHTTPResponse, err := getApiClient().Do(request)
+	if err != nil {
+		return nil, err
+	}
+
+	var repository ApiRepository
+	var localVarBody []byte
+	localVarBody, err = io.ReadAll(localVarHTTPResponse.Body)
+	if err != nil {
+		return nil, err
+	}
+	localVarHTTPResponse.Body.Close()
+	err = json.Unmarshal(localVarBody, &repository)
+	if err != nil {
+		return nil, err
+	}
+
+	return &repository, nil
 }
 
 func getAssetsInRepository(server *NxrmServer, repository *ApiRepository) (*[]ComponentIdentity, *[]ApiComponentAsset, error) {
