@@ -41,6 +41,11 @@ func (s *NxrmServer) GetApiUrl(api_path string) string {
 	return fmt.Sprintf("%s/service/rest%s", s.baseUrl, api_path)
 }
 
+type ComponentIdentity struct {
+	Path   *string                    `json:"p"`
+	Hashes ApiComponentAssetChecksums `json:"h"`
+}
+
 type ComponentHash string
 
 type ApiRepository struct {
@@ -64,6 +69,7 @@ type ApiComponentAsset struct {
 	Format      string                      `json:"format"`
 	Checksums   *ApiComponentAssetChecksums `json:"checksum"`
 	DownloadUrl string                      `json:"downloadUrl"`
+	Path        *string                     `json:"path"`
 }
 
 type ApiComponent struct {

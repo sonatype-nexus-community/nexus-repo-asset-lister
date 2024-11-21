@@ -9,10 +9,33 @@
 
 Utility to list identity of all assets in a repository within Sonatype Nexus Repository.
 
+- [What does this tool do?](#what-does-this-tool-do)
 - [Installation](#installation)
 - [Usage](#usage)
 - [Development](#development)
 - [The Fine Print](#the-fine-print)
+
+## What does this tool do?
+
+This tool produces a JSON file per Proxy Repository that contains basic identity information for every Asset in the Repository.
+
+A JSON files contents might look similar to this:
+
+```json
+[
+      {
+            "p": "/data-uri-to-buffer/-/data-uri-to-buffer-4.0.1.tgz",
+            "h": {
+                  "md5": "a4d7239289232437622e6342e771a153",
+                  "sha1": "d8feb2b2881e6a4f58c2e08acfd0e2834e26222e",
+                  "sha256": null
+            }
+      },
+      ...
+]
+```
+
+This tool purposefully skips Proxy Repositories of format `docker`.
 
 ## Installation
 
