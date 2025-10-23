@@ -268,29 +268,10 @@ func getAssetsInRepository(server *NxrmServer, repository *ApiRepository) (*[]Co
 	allAssetIdentities := make([]AssetIdentity, 0)
 	skippedAssets := make([]ApiComponentAsset, 0)
 
-	firstComponentPage, err := getAssetsPageForRepository(server, *repository.Name, nil)
-	if err != nil {
-		return nil, nil, nil, err
-	}
+	var lastContinuationToken *string = nil
+	hasNext := true
 
-	for _, c := range firstComponentPage.Items {
-		allComponentIdentities = append(allComponentIdentities, ComponentIdentity{
-			Group:   c.Group,
-			Name:    c.Name,
-			Version: c.Version,
-		})
-		for _, a := range c.Assets {
-			allAssetIdentities = append(allAssetIdentities, AssetIdentity{
-				Path:   a.Path,
-				Hashes: *a.Checksums,
-			})
-		}
-	}
-	log.Debug("Component Identities after first page:", len(allAssetIdentities))
-
-	lastContinuationToken := firstComponentPage.ContinuationToken
-
-	for lastContinuationToken != nil {
+	for hasNext {
 		componentPage, err := getAssetsPageForRepository(server, *repository.Name, lastContinuationToken)
 		if err != nil {
 			return nil, nil, nil, err
@@ -309,9 +290,14 @@ func getAssetsInRepository(server *NxrmServer, repository *ApiRepository) (*[]Co
 				})
 			}
 		}
-		log.Debug(fmt.Sprintf("Component Identities after page: %d - cont token: %s ", len(allAssetIdentities), *lastContinuationToken))
+		if lastContinuationToken == nil {
+			log.Debug(fmt.Sprintf("Asset Identities after first page: %d", len(allAssetIdentities)))
+		} else {
+			log.Debug(fmt.Sprintf("Asset Identities after page: %d - cont token: %s ", len(allAssetIdentities), *lastContinuationToken))
+		}
 
 		lastContinuationToken = componentPage.ContinuationToken
+		hasNext = lastContinuationToken != nil
 	}
 
 	return &allComponentIdentities, &allAssetIdentities, &skippedAssets, nil
