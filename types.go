@@ -42,6 +42,12 @@ func (s *NxrmServer) GetApiUrl(api_path string) string {
 }
 
 type ComponentIdentity struct {
+	Group   *string
+	Name    *string
+	Version *string
+}
+
+type AssetIdentity struct {
 	Path   *string                    `json:"p"`
 	Hashes ApiComponentAssetChecksums `json:"h"`
 }
@@ -77,7 +83,7 @@ type ApiComponent struct {
 	Repository string              `json:"repository"`
 	Format     string              `json:"format"`
 	Group      *string             `json:"group"`
-	Name       string              `json:"name"`
+	Name       *string             `json:"name"`
 	Version    *string             `json:"version"`
 	Assets     []ApiComponentAsset `json:"assets"`
 }

@@ -144,16 +144,16 @@ func main() {
 		}
 
 		if r.Type != nil && *r.Type == REPO_TYPE_PROXY {
-			println(fmt.Sprintf("%00d: PROXY of format %s named %s", i, *r.Format, *r.Name))
-			componentHashes, skippedAssets, err := getAssetsInRepository(nxrmServer, &r)
+			println(fmt.Sprintf("%00d: %s = PROXY of format %s", i, *r.Name, *r.Format))
+			components, assetHashes, skippedAssets, err := getAssetsInRepository(nxrmServer, &r)
 			if err != nil {
 				println(fmt.Sprintf("Error: %v", err))
 			}
 
-			println(fmt.Sprintf("   : %0000d Asset Identities, %0000d Skipped Assets", len(*componentHashes), len(*skippedAssets)))
+			println(fmt.Sprintf("   : %0000d Components, %0000d Asset Identities, %0000d Skipped Assets", len(*components), len(*assetHashes), len(*skippedAssets)))
 
 			outputFilename := fmt.Sprintf("%s-%s-%s.json", *r.Type, *r.Format, *r.Name)
-			jsonData, err := json.Marshal(componentHashes)
+			jsonData, err := json.Marshal(assetHashes)
 			if err != nil {
 				println(fmt.Sprintf("Error: %v", err))
 			}
@@ -263,18 +263,24 @@ func getSingleRepositoryByName(server *NxrmServer, repository_name string) (*Api
 	return &repository, nil
 }
 
-func getAssetsInRepository(server *NxrmServer, repository *ApiRepository) (*[]ComponentIdentity, *[]ApiComponentAsset, error) {
-	allAssetIdentities := make([]ComponentIdentity, 0)
+func getAssetsInRepository(server *NxrmServer, repository *ApiRepository) (*[]ComponentIdentity, *[]AssetIdentity, *[]ApiComponentAsset, error) {
+	allComponentIdentities := make([]ComponentIdentity, 0)
+	allAssetIdentities := make([]AssetIdentity, 0)
 	skippedAssets := make([]ApiComponentAsset, 0)
 
 	firstComponentPage, err := getAssetsPageForRepository(server, *repository.Name, nil)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	for _, c := range firstComponentPage.Items {
+		allComponentIdentities = append(allComponentIdentities, ComponentIdentity{
+			Group:   c.Group,
+			Name:    c.Name,
+			Version: c.Version,
+		})
 		for _, a := range c.Assets {
-			allAssetIdentities = append(allAssetIdentities, ComponentIdentity{
+			allAssetIdentities = append(allAssetIdentities, AssetIdentity{
 				Path:   a.Path,
 				Hashes: *a.Checksums,
 			})
@@ -287,12 +293,17 @@ func getAssetsInRepository(server *NxrmServer, repository *ApiRepository) (*[]Co
 	for lastContinuationToken != nil {
 		componentPage, err := getAssetsPageForRepository(server, *repository.Name, lastContinuationToken)
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, nil, err
 		}
 
 		for _, c := range componentPage.Items {
+			allComponentIdentities = append(allComponentIdentities, ComponentIdentity{
+				Group:   c.Group,
+				Name:    c.Name,
+				Version: c.Version,
+			})
 			for _, a := range c.Assets {
-				allAssetIdentities = append(allAssetIdentities, ComponentIdentity{
+				allAssetIdentities = append(allAssetIdentities, AssetIdentity{
 					Path:   a.Path,
 					Hashes: *a.Checksums,
 				})
@@ -303,7 +314,7 @@ func getAssetsInRepository(server *NxrmServer, repository *ApiRepository) (*[]Co
 		lastContinuationToken = componentPage.ContinuationToken
 	}
 
-	return &allAssetIdentities, &skippedAssets, nil
+	return &allComponentIdentities, &allAssetIdentities, &skippedAssets, nil
 }
 
 func getAssetsPageForRepository(server *NxrmServer, repository_name string, continuation_token *string) (*ApiComponentList, error) {
