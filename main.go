@@ -263,28 +263,14 @@ func getSingleRepositoryByName(server *NxrmServer, repository_name string) (*Api
 	return &repository, nil
 }
 
-func getAssetsInRepository(server *NxrmServer, repository *ApiRepository) (*[]ComponentIdentity, *[]ApiComponentAsset, error) {
-	allAssetIdentities := make([]ComponentIdentity, 0)
+func getAssetsInRepository(server *NxrmServer, repository *ApiRepository) (*[]ComponentAssetIdentity, *[]ApiComponentAsset, error) {
+	allAssetIdentities := make([]ComponentAssetIdentity, 0)
 	skippedAssets := make([]ApiComponentAsset, 0)
 
-	firstComponentPage, err := getAssetsPageForRepository(server, *repository.Name, nil)
-	if err != nil {
-		return nil, nil, err
-	}
+	var lastContinuationToken *string = nil
+	hasNext := true
 
-	for _, c := range firstComponentPage.Items {
-		for _, a := range c.Assets {
-			allAssetIdentities = append(allAssetIdentities, ComponentIdentity{
-				Path:   a.Path,
-				Hashes: *a.Checksums,
-			})
-		}
-	}
-	log.Debug("Component Identities after first page:", len(allAssetIdentities))
-
-	lastContinuationToken := firstComponentPage.ContinuationToken
-
-	for lastContinuationToken != nil {
+	for hasNext {
 		componentPage, err := getAssetsPageForRepository(server, *repository.Name, lastContinuationToken)
 		if err != nil {
 			return nil, nil, err
@@ -292,15 +278,20 @@ func getAssetsInRepository(server *NxrmServer, repository *ApiRepository) (*[]Co
 
 		for _, c := range componentPage.Items {
 			for _, a := range c.Assets {
-				allAssetIdentities = append(allAssetIdentities, ComponentIdentity{
+				allAssetIdentities = append(allAssetIdentities, ComponentAssetIdentity{
 					Path:   a.Path,
 					Hashes: *a.Checksums,
 				})
 			}
 		}
-		log.Debug(fmt.Sprintf("Component Identities after page: %d - cont token: %s ", len(allAssetIdentities), *lastContinuationToken))
+		if lastContinuationToken == nil {
+			log.Debug(fmt.Sprintf("Asset Identities after first page: %d", len(allAssetIdentities)))
+		} else {
+			log.Debug(fmt.Sprintf("Asset Identities after page: %d - cont token: %s ", len(allAssetIdentities), *lastContinuationToken))
+		}
 
 		lastContinuationToken = componentPage.ContinuationToken
+		hasNext = lastContinuationToken != nil
 	}
 
 	return &allAssetIdentities, &skippedAssets, nil
